@@ -151,7 +151,7 @@ export class DefenseManager {
                 netDamage: DefenseManager.calculateNetDamage(towers, hostile, this.hostiles),
                 threat: DefenseManager.getThreatPriority(hostile),
             }))
-            .filter((target) => target.netDamage > 0)
+            .filter((target) => target.netDamage > 0 || towers.length === 0)
             .sort((left, right) => {
                 if (left.threat !== right.threat) {
                     return right.threat - left.threat;

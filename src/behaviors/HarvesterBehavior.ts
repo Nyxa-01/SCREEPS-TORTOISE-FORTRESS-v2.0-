@@ -56,9 +56,16 @@ export class HarvesterBehavior {
             return false;
         }
 
-        const source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE) ?? creep.pos.findClosestByRange(FIND_SOURCES);
+        if (!creep.memory.t) {
+            const sources = room.find(FIND_SOURCES);
+            const uid = parseInt(creep.name.split('-').pop() ?? '0', 10) || 0;
+            const assigned = sources[uid % sources.length];
+            if (assigned) creep.memory.t = assigned.id;
+        }
 
-        if (!source) {
+        const source = Game.getObjectById(creep.memory.t as Id<Source>);
+
+        if (!source || (source.energy === 0 && source.ticksToRegeneration > 0)) {
             return false;
         }
 
