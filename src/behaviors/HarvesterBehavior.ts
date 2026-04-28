@@ -17,7 +17,7 @@ export class HarvesterBehavior extends BaseBehavior {
                 ),
             ]),
             new FnTask(({ creep: activeCreep, colony: activeColony }) =>
-                activeColony.room ? this.harvestEnergy(activeCreep, activeColony.room) : false,
+                this.harvestEnergy(activeCreep, activeColony),
             ),
         ]);
 
@@ -59,14 +59,32 @@ export class HarvesterBehavior extends BaseBehavior {
         return true;
     }
 
-    private harvestEnergy(creep: Creep, room: Room): boolean {
+    private harvestEnergy(creep: Creep, colony: Colony): boolean {
+        const room = colony.room;
+        if (!room) return false;
+
         const sources = room.find(FIND_SOURCES);
         if (sources.length === 0) return false;
 
         if (!creep.memory.t) {
-            const nameParts = creep.name.split('-');
-            const uid = parseInt(nameParts[nameParts.length - 1] ?? '0', 10) || 0;
-            creep.memory.t = sources[uid % sources.length]!.id;
+            sources.sort((left, right) => creep.pos.getRangeTo(left) - creep.pos.getRangeTo(right));
+
+            let bestSource = sources[0]!;
+            let minAssigned = Infinity;
+            const harvesters = colony.getCreeps('emergencyHarvester');
+
+            for (const sourceCandidate of sources) {
+                const assigned = harvesters.filter(
+                    (harvester) => harvester.name !== creep.name && harvester.memory.t === sourceCandidate.id,
+                ).length;
+
+                if (assigned < minAssigned) {
+                    minAssigned = assigned;
+                    bestSource = sourceCandidate;
+                }
+            }
+
+            creep.memory.t = bestSource.id;
         }
 
         let source: Source | null = Game.getObjectById(creep.memory.t as Id<Source>);
