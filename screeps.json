@@ -1,0 +1,11 @@
+{
+    "main": {
+        "host": "screeps.com",
+        "port": 443,
+        "protocol": "https",
+        "secure": true,
+        "path": "/api/",
+        "branch": "default",
+        "token": "replace-with-project-fallback-token"
+    }
+}

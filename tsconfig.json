@@ -1,0 +1,35 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "strict": true,
+        "lib": [
+            "ES2020"
+        ],
+        "types": [
+            "node",
+            "jest",
+            "screeps"
+        ],
+        "rootDir": ".",
+        "outDir": "dist",
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "src/**/*.d.ts",
+        "test/**/*.ts",
+        "rollup.config.js",
+        "jest.config.ts"
+    ],
+    "exclude": [
+        "dist",
+        "node_modules"
+    ]
+}

@@ -1,0 +1,51 @@
+{
+    "name": "turtle-defense-starter",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "build": "rollup -c",
+        "build:watch": "rollup -c -w",
+        "deploy": "DEPLOY=true rollup -c",
+        "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
+        "format": "prettier --write \"{src,test,docs}/**/*.{ts,js,json,md,yml,yaml}\"",
+        "test": "jest --runInBand",
+        "test:watch": "jest --watch",
+        "typecheck": "tsc --noEmit",
+        "prepare": "husky install"
+    },
+    "dependencies": {
+        "js-yaml": "^4.1.0",
+        "lz-string": "^1.5.0",
+        "source-map-js": "^1.2.1"
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^28.0.3",
+        "@rollup/plugin-node-resolve": "^16.0.1",
+        "@rollup/plugin-replace": "^6.0.2",
+        "@rollup/plugin-typescript": "^12.1.2",
+        "@types/jest": "^29.5.14",
+        "@types/js-yaml": "^4.0.9",
+        "@types/lz-string": "^1.5.0",
+        "@types/node": "^22.15.17",
+        "@types/screeps": "^3.4.0",
+        "@typescript-eslint/eslint-plugin": "^8.31.1",
+        "@typescript-eslint/parser": "^8.31.1",
+        "eslint": "^8.57.1",
+        "eslint-config-prettier": "^10.1.2",
+        "husky": "^9.1.7",
+        "jest": "^29.7.0",
+        "jiti": "^2.4.2",
+        "prettier": "^3.5.3",
+        "rollup": "^4.40.0",
+        "rollup-plugin-screeps": "^1.0.1",
+        "screeps-test-helper": "^1.0.0",
+        "ts-jest": "^29.3.4",
+        "ts-node": "^10.9.2",
+        "tslib": "^2.8.1",
+        "typescript": "^5.8.3"
+    }
+}
