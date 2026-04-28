@@ -15,6 +15,13 @@ const HAULER_PATTERN: BodyPartConstant[] = [CARRY, CARRY, MOVE];
 const BUILDER_PATTERN: BodyPartConstant[] = [WORK, CARRY, CARRY, MOVE, MOVE];
 const UPGRADER_PATTERN: BodyPartConstant[] = [WORK, CARRY, MOVE, MOVE];
 const DEFENDER_PATTERN: BodyPartConstant[] = [TOUGH, RANGED_ATTACK, MOVE, MOVE];
+const MYTHIC_TITLES: Record<string, string> = {
+    emergencyHarvester: 'Nyx_Helot',
+    hauler: 'Erebus_Peltast',
+    builder: 'Tartarus_Tekton',
+    upgrader: 'Hecate_Hierophant',
+    defender: 'Thanatos_Toxotes',
+};
 
 export class SpawnManager {
     private queue: SpawnRequest[] = [];
@@ -44,7 +51,8 @@ export class SpawnManager {
                 break;
             }
 
-            const creepName = `${this.colony.name}-${next.role}-${Game.time}-${Mem.nextUid()}`;
+            const title = MYTHIC_TITLES[next.role] ?? next.role;
+            const creepName = `${this.colony.name}-${title}-${Game.time}-${Mem.nextUid()}`;
             const result = spawn.spawnCreep(next.body, creepName, { memory: next.memory });
 
             if (result === OK) {
