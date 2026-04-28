@@ -35,7 +35,15 @@ export class HaulerBehavior {
     }
 
     private deliverEnergy(creep: Creep, colony: Colony): boolean {
-        const target = colony.logisticsManager.getFillTarget(creep);
+        let target: ReturnType<Colony['logisticsManager']['getFillTarget']> | Creep | undefined = colony.logisticsManager.getFillTarget(creep);
+
+        if (!target) {
+            target = creep.pos.findClosestByPath(FIND_MY_CREEPS, {
+                filter: (candidate) =>
+                    (candidate.name.includes('upgrader') || candidate.name.includes('builder')) &&
+                    candidate.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+            }) ?? undefined;
+        }
 
         if (!target) {
             return false;

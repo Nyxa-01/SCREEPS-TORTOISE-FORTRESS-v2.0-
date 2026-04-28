@@ -133,21 +133,34 @@ export class SpawnManager {
     }
 
     private getBody(role: ColonyRole, energyBudget: number): BodyPartConstant[] {
+        const room = this.colony.room;
+        const energyLimit = room?.energyCapacityAvailable ?? energyBudget;
+        const scaledBudget = Math.min(energyBudget, energyLimit);
+        const buildElasticBody = (pattern: readonly BodyPartConstant[]): BodyPartConstant[] => {
+            const body = buildRepeatedBody(pattern, scaledBudget, 1);
+
+            if (getBodyCost(body) > energyLimit) {
+                return [WORK, CARRY, MOVE];
+            }
+
+            return body;
+        };
+
         switch (role) {
             case 'emergencyHarvester':
-                return buildRepeatedBody(EMERGENCY_HARVESTER_PATTERN, energyBudget, 1);
+                return buildElasticBody(EMERGENCY_HARVESTER_PATTERN);
             case 'hauler':
-                return buildRepeatedBody(HAULER_PATTERN, energyBudget, 1);
+                return buildElasticBody(HAULER_PATTERN);
             case 'builder':
-                return buildRepeatedBody(BUILDER_PATTERN, energyBudget, 1);
+                return buildElasticBody(BUILDER_PATTERN);
             case 'upgrader':
-                return buildRepeatedBody(UPGRADER_PATTERN, energyBudget, 1);
+                return buildElasticBody(UPGRADER_PATTERN);
             case 'defender':
-                if (getBodyCost(BUNKER_DEFENDER_BODY) <= energyBudget) {
+                if (getBodyCost(BUNKER_DEFENDER_BODY) <= scaledBudget) {
                     return [...BUNKER_DEFENDER_BODY];
                 }
 
-                return buildRepeatedBody(DEFENDER_PATTERN, energyBudget, 1);
+                return buildElasticBody(DEFENDER_PATTERN);
             default:
                 return [...EMERGENCY_HARVESTER_PATTERN];
         }
