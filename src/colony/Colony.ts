@@ -89,8 +89,22 @@ export class Colony {
         const currentDefcon = this.defenseManager.getSnapshot().defcon;
 
         for (const creep of this.getCreeps()) {
-            // APOPTOSIS OVERRIDE: Purge obsolete generations ONLY IN PEACETIME
-            if ((creep.memory.g ?? 0) < SYSTEM_GENERATION && currentDefcon === DEFCON.GREEN) {
+            const role = creep.memory.r;
+            const isObsolete = (creep.memory.g ?? 0) < SYSTEM_GENERATION;
+            let shouldPurge = false;
+
+            if (isObsolete && currentDefcon === DEFCON.GREEN) {
+                if (role === 'emergencyHarvester' || role === 'hauler') {
+                    const hasReplacement = this.getCreeps(role).some((candidate) => (candidate.memory.g ?? 0) >= SYSTEM_GENERATION);
+                    if (hasReplacement) {
+                        shouldPurge = true;
+                    }
+                } else {
+                    shouldPurge = true;
+                }
+            }
+
+            if (shouldPurge) {
                 const spawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS);
                 if (spawn) {
                     if (creep.store.getUsedCapacity() > 0) {
@@ -108,8 +122,6 @@ export class Colony {
                 }
                 continue;
             }
-
-            const role = creep.memory.r;
 
             if (!role) {
                 continue;

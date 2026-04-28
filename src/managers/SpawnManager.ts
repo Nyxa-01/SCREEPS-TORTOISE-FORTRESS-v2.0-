@@ -66,12 +66,15 @@ export class SpawnManager {
             return [];
         }
 
+        const modernCreeps = this.colony.getCreeps().filter((creep) => (creep.memory.g ?? 0) >= SYSTEM_GENERATION);
+        const countRole = (role: ColonyRole) => modernCreeps.filter((creep) => creep.memory.r === role).length;
+
         const roleCounts: Record<ColonyRole, number> = {
-            emergencyHarvester: this.colony.getCreeps('emergencyHarvester').length,
-            defender: this.colony.getCreeps('defender').length,
-            hauler: this.colony.getCreeps('hauler').length,
-            builder: this.colony.getCreeps('builder').length,
-            upgrader: this.colony.getCreeps('upgrader').length,
+            emergencyHarvester: countRole('emergencyHarvester'),
+            defender: countRole('defender'),
+            hauler: countRole('hauler'),
+            builder: countRole('builder'),
+            upgrader: countRole('upgrader'),
         };
 
         const requests: SpawnRequest[] = [];
