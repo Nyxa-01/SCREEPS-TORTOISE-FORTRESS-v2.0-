@@ -42,8 +42,8 @@ function deserializeSegment<T>(segmentId: SegmentId, fallback: T): T {
 
     try {
         return JSON.parse(inflated) as T;
-    } catch {
-        return fallback;
+    } catch (error) {
+        throw new Error(`Segment ${segmentId} corrupted: ${error}`);
     }
 }
 

@@ -83,6 +83,8 @@ export class Colony {
     }
 
     private runCreeps(): void {
+        let creepErrors = 0;
+
         for (const creep of this.getCreeps()) {
             const role = creep.memory.r;
 
@@ -99,8 +101,13 @@ export class Colony {
             try {
                 behavior.run(creep, this);
             } catch (error) {
+                creepErrors += 1;
                 console.log(`[colony:${this.name}] creep ${creep.name} failed: ${String(error)}`);
             }
+        }
+
+        if (creepErrors > 5) {
+            throw new Error(`Catastrophic creep failure threshold reached: ${creepErrors} errors.`);
         }
     }
 }

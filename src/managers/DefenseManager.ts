@@ -269,7 +269,7 @@ export class DefenseManager {
             return DEFCON.RED;
         }
 
-        if (this.rankedTargets.length > 0) {
+        if (this.rankedTargets.length > 0 || this.edgeDanceHostiles.length > 0) {
             return DEFCON.ORANGE;
         }
 
