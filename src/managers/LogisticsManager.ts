@@ -88,28 +88,43 @@ export class LogisticsManager {
             return undefined;
         }
 
-        const droppedEnergy = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
-            filter: (resource) => resource.resourceType === RESOURCE_ENERGY && resource.amount >= 50,
-        }) as Resource<ResourceConstant> | null;
+        const isConsumer = creep.memory.r === 'builder' || creep.memory.r === 'upgrader';
 
-        if (droppedEnergy) {
-            return droppedEnergy;
-        }
+        if (!isConsumer) {
+            const droppedEnergy = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
+                filter: (resource) => resource.resourceType === RESOURCE_ENERGY && resource.amount >= 50,
+            }) as Resource<ResourceConstant> | null;
 
-        const tombstone = creep.pos.findClosestByPath(FIND_TOMBSTONES, {
-            filter: (candidate) => candidate.store.getUsedCapacity(RESOURCE_ENERGY) > 0,
-        });
+            if (droppedEnergy) {
+                return droppedEnergy;
+            }
 
-        if (tombstone) {
-            return tombstone;
-        }
+            const tombstone = creep.pos.findClosestByPath(FIND_TOMBSTONES, {
+                filter: (candidate) => candidate.store.getUsedCapacity(RESOURCE_ENERGY) > 0,
+            });
 
-        const ruin = creep.pos.findClosestByPath(FIND_RUINS, {
-            filter: (candidate) => candidate.store.getUsedCapacity(RESOURCE_ENERGY) > 0,
-        });
+            if (tombstone) {
+                return tombstone;
+            }
 
-        if (ruin) {
-            return ruin;
+            const ruin = creep.pos.findClosestByPath(FIND_RUINS, {
+                filter: (candidate) => candidate.store.getUsedCapacity(RESOURCE_ENERGY) > 0,
+            });
+
+            if (ruin) {
+                return ruin;
+            }
+        } else {
+            const localDropped = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
+                filter: (resource) =>
+                    resource.resourceType === RESOURCE_ENERGY &&
+                    resource.amount >= 50 &&
+                    creep.pos.getRangeTo(resource) <= 3,
+            }) as Resource<ResourceConstant> | null;
+
+            if (localDropped) {
+                return localDropped;
+            }
         }
 
         if ((room.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) > 0) {
