@@ -140,6 +140,6 @@ export class LogisticsManager {
             if (saturatedSpawn) return saturatedSpawn;
         }
 
-        return creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE) ?? undefined;
+        return undefined; // STRICT ROLE SEPARATION: Civilians must never mine raw sources.
     }
 }
