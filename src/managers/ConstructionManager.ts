@@ -10,7 +10,7 @@ export class ConstructionManager {
         const room = this.colony.room;
         const controllerLevel = room?.controller?.level ?? 0;
 
-        if (!room || controllerLevel < 4 || room.find(FIND_MY_CONSTRUCTION_SITES).length >= 5) {
+        if (!room || controllerLevel < 2 || room.find(FIND_MY_CONSTRUCTION_SITES).length >= 5) {
             return;
         }
 
