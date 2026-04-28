@@ -1,4 +1,5 @@
 import type { ColonyRole } from '../config';
+import { BuilderBehavior } from '../behaviors/BuilderBehavior';
 import { HarvesterBehavior } from '../behaviors/HarvesterBehavior';
 import { HaulerBehavior } from '../behaviors/HaulerBehavior';
 import { UpgraderBehavior } from '../behaviors/UpgraderBehavior';
@@ -33,6 +34,7 @@ export class Colony {
         this.behaviors = {
             emergencyHarvester: new HarvesterBehavior(),
             hauler: new HaulerBehavior(),
+            builder: new BuilderBehavior(),
             upgrader: new UpgraderBehavior(),
             defender: new DefenderBehavior(),
         };

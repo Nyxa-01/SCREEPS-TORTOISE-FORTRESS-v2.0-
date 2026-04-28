@@ -43,6 +43,7 @@ export const ROLE_PRIORITY = [
     'emergencyHarvester',
     'defender',
     'hauler',
+    'builder',
     'upgrader',
 ] as const;
 
@@ -52,6 +53,7 @@ export const ROLE_BODIES: Readonly<Record<ColonyRole, BodyPartConstant[]>> = {
     emergencyHarvester: [WORK, WORK, CARRY, MOVE],
     defender: BUNKER_DEFENDER_BODY,
     hauler: [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE],
+    builder: [WORK, CARRY, CARRY, MOVE, MOVE],
     upgrader: [WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE],
 };
 
@@ -59,6 +61,7 @@ export const ROLE_MINIMUMS: Readonly<Record<ColonyRole, number>> = {
     emergencyHarvester: 1,
     defender: 0,
     hauler: 2,
+    builder: 1,
     upgrader: 1,
 };
 

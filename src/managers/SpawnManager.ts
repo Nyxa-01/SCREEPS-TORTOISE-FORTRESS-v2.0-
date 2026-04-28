@@ -11,6 +11,7 @@ import { buildRepeatedBody, getBodyCost } from '../utils/body';
 
 const EMERGENCY_HARVESTER_PATTERN: BodyPartConstant[] = [WORK, CARRY, MOVE];
 const HAULER_PATTERN: BodyPartConstant[] = [CARRY, CARRY, MOVE];
+const BUILDER_PATTERN: BodyPartConstant[] = [WORK, CARRY, CARRY, MOVE, MOVE];
 const UPGRADER_PATTERN: BodyPartConstant[] = [WORK, CARRY, MOVE, MOVE];
 const DEFENDER_PATTERN: BodyPartConstant[] = [TOUGH, RANGED_ATTACK, MOVE, MOVE];
 
@@ -68,6 +69,7 @@ export class SpawnManager {
             emergencyHarvester: this.colony.getCreeps('emergencyHarvester').length,
             defender: this.colony.getCreeps('defender').length,
             hauler: this.colony.getCreeps('hauler').length,
+            builder: this.colony.getCreeps('builder').length,
             upgrader: this.colony.getCreeps('upgrader').length,
         };
 
@@ -87,9 +89,14 @@ export class SpawnManager {
             requests.push(this.createRequest('hauler', 2, 'maintain logistics throughput'));
         }
 
+        const minimumBuilders = room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? ROLE_MINIMUMS.builder : 0;
+        for (let index = roleCounts.builder; index < minimumBuilders; index += 1) {
+            requests.push(this.createRequest('builder', 3, 'complete construction sites'));
+        }
+
         const minimumUpgraders = this.colony.upgradeManager.shouldUpgrade() ? ROLE_MINIMUMS.upgrader : 0;
         for (let index = roleCounts.upgrader; index < minimumUpgraders; index += 1) {
-            requests.push(this.createRequest('upgrader', 3, 'maintain controller progress'));
+            requests.push(this.createRequest('upgrader', 4, 'maintain controller progress'));
         }
 
         return requests.sort((left, right) => left.priority - right.priority);
@@ -129,6 +136,8 @@ export class SpawnManager {
                 return buildRepeatedBody(EMERGENCY_HARVESTER_PATTERN, energyBudget, 1);
             case 'hauler':
                 return buildRepeatedBody(HAULER_PATTERN, energyBudget, 1);
+            case 'builder':
+                return buildRepeatedBody(BUILDER_PATTERN, energyBudget, 1);
             case 'upgrader':
                 return buildRepeatedBody(UPGRADER_PATTERN, energyBudget, 1);
             case 'defender':
