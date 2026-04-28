@@ -1,5 +1,4 @@
 import { PATH_CACHE_TTL } from '../config';
-import { SegmentManager } from '../memory/segments';
 
 type MoveTarget = RoomPosition | { pos: RoomPosition };
 
@@ -22,6 +21,8 @@ export class PathingService {
             return OK;
         }
 
+        const isCombatant = creep.memory.r === 'defender';
+
         const search = PathFinder.search(
             creep.pos,
             {
@@ -32,7 +33,7 @@ export class PathingService {
                 plainCost: 2,
                 swampCost: 10,
                 maxOps: 8_000,
-                roomCallback: (roomName) => this.getCostMatrix(roomName),
+                roomCallback: (roomName) => this.getCostMatrix(roomName, isCombatant),
             },
         );
 
@@ -54,19 +55,12 @@ export class PathingService {
         return creep.move(direction);
     }
 
-    public static getCostMatrix(roomName: string): CostMatrix | boolean {
-        const cached = this.matrixCache.get(roomName);
+    public static getCostMatrix(roomName: string, ignoreThreats = false): CostMatrix | boolean {
+        const cacheKey = `${roomName}_${ignoreThreats ? 'combat' : 'civilian'}`;
+        const cached = this.matrixCache.get(cacheKey);
 
         if (cached && Game.time - cached.tick <= PATH_CACHE_TTL) {
             return cached.matrix;
-        }
-
-        const serialized = SegmentManager.getCostMatrix(roomName);
-
-        if (serialized) {
-            const matrix = PathFinder.CostMatrix.deserialize(serialized);
-            this.matrixCache.set(roomName, { tick: Game.time, matrix });
-            return matrix;
         }
 
         const room = Game.rooms[roomName];
@@ -75,14 +69,13 @@ export class PathingService {
             return false;
         }
 
-        const matrix = this.buildCostMatrix(room);
-        this.matrixCache.set(roomName, { tick: Game.time, matrix });
-        SegmentManager.setCostMatrix(roomName, matrix.serialize());
+        const matrix = this.buildCostMatrix(room, ignoreThreats);
+        this.matrixCache.set(cacheKey, { tick: Game.time, matrix });
 
         return matrix;
     }
 
-    private static buildCostMatrix(room: Room): CostMatrix {
+    private static buildCostMatrix(room: Room, ignoreThreats: boolean): CostMatrix {
         const matrix = new PathFinder.CostMatrix();
 
         for (const structure of room.find(FIND_STRUCTURES)) {
@@ -114,16 +107,18 @@ export class PathingService {
             }
         }
 
-        const hostiles = room.find(FIND_HOSTILE_CREEPS);
-        for (const hostile of hostiles) {
-            const minX = Math.max(0, hostile.pos.x - 3);
-            const maxX = Math.min(49, hostile.pos.x + 3);
-            const minY = Math.max(0, hostile.pos.y - 3);
-            const maxY = Math.min(49, hostile.pos.y + 3);
+        if (!ignoreThreats) {
+            const hostiles = room.find(FIND_HOSTILE_CREEPS);
+            for (const hostile of hostiles) {
+                const minX = Math.max(0, hostile.pos.x - 3);
+                const maxX = Math.min(49, hostile.pos.x + 3);
+                const minY = Math.max(0, hostile.pos.y - 3);
+                const maxY = Math.min(49, hostile.pos.y + 3);
 
-            for (let x = minX; x <= maxX; x++) {
-                for (let y = minY; y <= maxY; y++) {
-                    matrix.set(x, y, 255);
+                for (let x = minX; x <= maxX; x++) {
+                    for (let y = minY; y <= maxY; y++) {
+                        matrix.set(x, y, 255);
+                    }
                 }
             }
         }
