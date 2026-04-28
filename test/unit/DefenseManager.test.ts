@@ -2,10 +2,14 @@ import { DefenseManager } from '../../src/managers/DefenseManager';
 import { createHostile, createTower } from '../helpers/mockFactories';
 
 describe('DefenseManager', () => {
-    it('detects edge-dance hostiles near exits', () => {
-        expect(DefenseManager.isEdgeDanceTarget(new RoomPosition(2, 24, 'W0N0'))).toBe(true);
-        expect(DefenseManager.isEdgeDanceTarget(new RoomPosition(47, 20, 'W0N0'))).toBe(true);
-        expect(DefenseManager.isEdgeDanceTarget(new RoomPosition(24, 24, 'W0N0'))).toBe(false);
+    it('only grants edge-dance immunity to combat creeps near exits', () => {
+        expect(DefenseManager.isEdgeDanceTarget(createHostile([RANGED_ATTACK], 2, 24))).toBe(true);
+        expect(DefenseManager.isEdgeDanceTarget(createHostile([CARRY], 47, 20))).toBe(false);
+        expect(DefenseManager.isEdgeDanceTarget(createHostile([ATTACK], 24, 24))).toBe(false);
+    });
+
+    it('assigns a non-zero threat score to carry-based thieves', () => {
+        expect(DefenseManager.getThreatPriority(createHostile([CARRY, CARRY], 10, 10))).toBe(2);
     });
 
     it('subtracts hostile healing from tower damage', () => {

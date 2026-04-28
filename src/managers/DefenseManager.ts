@@ -60,8 +60,14 @@ export class DefenseManager {
         return this.rankedTargets[0]?.hostile ?? this.hostiles[0];
     }
 
-    public static isEdgeDanceTarget(position: RoomPosition): boolean {
-        return isNearRoomEdge(position, 3);
+    public static isEdgeDanceTarget(hostile: Creep): boolean {
+        const isNearEdge = isNearRoomEdge(hostile.pos, 3);
+        const isCombatant =
+            hostile.getActiveBodyparts(ATTACK) > 0 ||
+            hostile.getActiveBodyparts(RANGED_ATTACK) > 0 ||
+            hostile.getActiveBodyparts(HEAL) > 0;
+
+        return isNearEdge && isCombatant;
     }
 
     public static getThreatPriority(hostile: Creep): number {
@@ -69,7 +75,8 @@ export class DefenseManager {
             hostile.getActiveBodyparts(HEAL) * 1_000 +
             hostile.getActiveBodyparts(RANGED_ATTACK) * 100 +
             hostile.getActiveBodyparts(ATTACK) * 10 +
-            hostile.getActiveBodyparts(WORK)
+            hostile.getActiveBodyparts(WORK) * 5 +
+            hostile.getActiveBodyparts(CARRY)
         );
     }
 
@@ -141,11 +148,11 @@ export class DefenseManager {
         }
 
         this.hostiles = room.find(FIND_HOSTILE_CREEPS);
-        this.edgeDanceHostiles = this.hostiles.filter((hostile) => DefenseManager.isEdgeDanceTarget(hostile.pos));
+        this.edgeDanceHostiles = this.hostiles.filter((hostile) => DefenseManager.isEdgeDanceTarget(hostile));
 
         const towers = this.getTowers();
         this.rankedTargets = this.hostiles
-            .filter((hostile) => !DefenseManager.isEdgeDanceTarget(hostile.pos))
+            .filter((hostile) => !DefenseManager.isEdgeDanceTarget(hostile))
             .map((hostile) => ({
                 hostile,
                 netDamage: DefenseManager.calculateNetDamage(towers, hostile, this.hostiles),
@@ -241,7 +248,7 @@ export class DefenseManager {
             return false;
         }
 
-        if (DefenseManager.isEdgeDanceTarget(hostile.pos)) {
+        if (DefenseManager.isEdgeDanceTarget(hostile)) {
             return false;
         }
 
