@@ -3,18 +3,31 @@ on:
   push:
     branches:
       - main
+
 jobs:
-  deploy:
+  validate_and_deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci --legacy-peer-deps
+
+      - name: Gate 1 - Code Formatting & Linting
+        run: npm run lint
+
+      - name: Gate 2 - Strict Typechecking
+        run: npm run typecheck
+
+      - name: Gate 3 - Unit Testing
+        run: npm run test --if-present
 
       - name: Inject Secure Credentials
         run: |
