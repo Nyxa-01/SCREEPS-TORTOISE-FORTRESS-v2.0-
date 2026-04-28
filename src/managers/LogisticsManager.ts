@@ -1,3 +1,4 @@
+import { DEFCON } from '../config';
 import type { Colony } from '../colony/Colony';
 
 export type EnergySourceTarget =
@@ -33,9 +34,8 @@ export class LogisticsManager {
             return undefined;
         }
 
-        const safeModeActive = (room.controller?.safeMode ?? 0) > 0;
-        const defenseActive = !safeModeActive && this.colony.defenseManager.getSnapshot().hostileCount > 0;
-        const energyStructures = room.find(FIND_MY_STRUCTURES, {
+        const defcon = this.colony.defenseManager.getSnapshot().defcon;
+        const coreStructures = room.find(FIND_MY_STRUCTURES, {
             filter: (structure) => {
                 if (
                     structure.structureType !== STRUCTURE_EXTENSION &&
@@ -48,10 +48,26 @@ export class LogisticsManager {
                 return structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
             },
         }) as Array<StructureSpawn | StructureExtension | StructureTower>;
+        const containers = room.find(FIND_STRUCTURES, {
+            filter: (structure) =>
+                structure.structureType === STRUCTURE_CONTAINER &&
+                (structure as StructureContainer).store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+        }) as StructureContainer[];
+        const fillTargets: EnergySinkTarget[] = [...coreStructures, ...containers];
 
-        energyStructures.sort((left, right) => {
-            const leftPriority = defenseActive && left.structureType === STRUCTURE_TOWER ? 0 : 1;
-            const rightPriority = defenseActive && right.structureType === STRUCTURE_TOWER ? 0 : 1;
+        const storage = room.storage;
+        if (storage && storage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+            fillTargets.push(storage);
+        }
+
+        const terminal = room.terminal;
+        if (terminal && terminal.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+            fillTargets.push(terminal);
+        }
+
+        fillTargets.sort((left, right) => {
+            const leftPriority = this.getFillPriority(left, defcon);
+            const rightPriority = this.getFillPriority(right, defcon);
 
             if (leftPriority !== rightPriority) {
                 return leftPriority - rightPriority;
@@ -60,25 +76,7 @@ export class LogisticsManager {
             return creep.pos.getRangeTo(left) - creep.pos.getRangeTo(right);
         });
 
-        if (energyStructures[0]) {
-            return energyStructures[0];
-        }
-
-        if ((room.storage?.store.getFreeCapacity(RESOURCE_ENERGY) ?? 0) > 0) {
-            return room.storage;
-        }
-
-        if ((room.terminal?.store.getFreeCapacity(RESOURCE_ENERGY) ?? 0) > 0) {
-            return room.terminal;
-        }
-
-        const containers = room.find(FIND_STRUCTURES, {
-            filter: (structure) =>
-                structure.structureType === STRUCTURE_CONTAINER &&
-                (structure as StructureContainer).store.getFreeCapacity(RESOURCE_ENERGY) > 0,
-        }) as StructureContainer[];
-
-        return creep.pos.findClosestByPath(containers) ?? containers[0];
+        return fillTargets[0];
     }
 
     public getEnergySource(creep: Creep): EnergySourceTarget | undefined {
@@ -89,38 +87,68 @@ export class LogisticsManager {
         }
 
         const isConsumer = creep.memory.r === 'builder' || creep.memory.r === 'upgrader';
+        const reservedTransit = creep.memory.r === 'hauler'
+            ? this.getReservedTransitByTarget(creep)
+            : new Map<string, number>();
 
         if (!isConsumer) {
-            const droppedEnergy = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
-                filter: (resource) => resource.resourceType === RESOURCE_ENERGY && resource.amount >= 50,
-            }) as Resource<ResourceConstant> | null;
+            const droppedEnergy = this.findClosestByPath(
+                creep,
+                room.find(FIND_DROPPED_RESOURCES, {
+                    filter: (resource) =>
+                        resource.resourceType === RESOURCE_ENERGY &&
+                        resource.amount >= 50 &&
+                        !this.isTransitClaimed(resource.id, resource.amount, reservedTransit),
+                }) as Resource<ResourceConstant>[],
+            );
 
             if (droppedEnergy) {
-                return droppedEnergy;
+                return this.rememberTarget(creep, droppedEnergy);
             }
 
-            const tombstone = creep.pos.findClosestByPath(FIND_TOMBSTONES, {
-                filter: (candidate) => candidate.store.getUsedCapacity(RESOURCE_ENERGY) > 0,
-            });
+            const tombstone = this.findClosestByPath(
+                creep,
+                room.find(FIND_TOMBSTONES, {
+                    filter: (candidate) =>
+                        candidate.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
+                        !this.isTransitClaimed(
+                            candidate.id,
+                            candidate.store.getUsedCapacity(RESOURCE_ENERGY),
+                            reservedTransit,
+                        ),
+                }),
+            );
 
             if (tombstone) {
-                return tombstone;
+                return this.rememberTarget(creep, tombstone);
             }
 
-            const ruin = creep.pos.findClosestByPath(FIND_RUINS, {
-                filter: (candidate) => candidate.store.getUsedCapacity(RESOURCE_ENERGY) > 0,
-            });
+            const ruin = this.findClosestByPath(
+                creep,
+                room.find(FIND_RUINS, {
+                    filter: (candidate) =>
+                        candidate.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
+                        !this.isTransitClaimed(
+                            candidate.id,
+                            candidate.store.getUsedCapacity(RESOURCE_ENERGY),
+                            reservedTransit,
+                        ),
+                }),
+            );
 
             if (ruin) {
-                return ruin;
+                return this.rememberTarget(creep, ruin);
             }
         } else {
-            const localDropped = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
-                filter: (resource) =>
-                    resource.resourceType === RESOURCE_ENERGY &&
-                    resource.amount >= 50 &&
-                    creep.pos.getRangeTo(resource) <= 3,
-            }) as Resource<ResourceConstant> | null;
+            const localDropped = this.findClosestByPath(
+                creep,
+                room.find(FIND_DROPPED_RESOURCES, {
+                    filter: (resource) =>
+                        resource.resourceType === RESOURCE_ENERGY &&
+                        resource.amount >= 50 &&
+                        creep.pos.getRangeTo(resource) <= 3,
+                }) as Resource<ResourceConstant>[],
+            );
 
             if (localDropped) {
                 return localDropped;
@@ -128,11 +156,11 @@ export class LogisticsManager {
         }
 
         if ((room.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) > 0) {
-            return room.storage;
+            return this.rememberTarget(creep, room.storage);
         }
 
         if ((room.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) > 0) {
-            return room.terminal;
+            return this.rememberTarget(creep, room.terminal);
         }
 
         const containers = room.find(FIND_STRUCTURES, {
@@ -141,20 +169,100 @@ export class LogisticsManager {
                 (structure as StructureContainer | StructureLink).store.getUsedCapacity(RESOURCE_ENERGY) > 0,
         }) as Array<StructureContainer | StructureLink>;
 
-        const storedEnergy = creep.pos.findClosestByPath(containers) ?? containers[0];
+        const storedEnergy = this.findClosestByPath(creep, containers);
 
         if (storedEnergy) {
-            return storedEnergy;
+            return this.rememberTarget(creep, storedEnergy);
         }
 
         // Saturation Bypass: Prevent RCL 1 deadlock by allowing workers to tap full spawns
         if (creep.memory.r === 'upgrader' || creep.memory.r === 'builder') {
-            const saturatedSpawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS, {
-                filter: (s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= 250,
-            });
-            if (saturatedSpawn) return saturatedSpawn;
+            const saturatedSpawn = this.findClosestByPath(
+                creep,
+                room.find(FIND_MY_SPAWNS, {
+                    filter: (candidate) => candidate.store.getUsedCapacity(RESOURCE_ENERGY) >= 250,
+                }),
+            );
+
+            if (saturatedSpawn) {
+                return saturatedSpawn;
+            }
         }
 
-        return undefined; // STRICT ROLE SEPARATION: Civilians must never mine raw sources.
+        return this.rememberTarget(creep, undefined); // STRICT ROLE SEPARATION: Civilians must never mine raw sources.
+    }
+
+    private getFillPriority(target: EnergySinkTarget, defcon: DEFCON): number {
+        switch (target.structureType) {
+            case STRUCTURE_SPAWN:
+            case STRUCTURE_EXTENSION:
+                return 0;
+            case STRUCTURE_TOWER:
+                return defcon !== DEFCON.GREEN ? 0 : 1;
+            case STRUCTURE_CONTAINER:
+                return 2;
+            case STRUCTURE_STORAGE:
+                return 3;
+            case STRUCTURE_TERMINAL:
+                return 4;
+            default:
+                return 5;
+        }
+    }
+
+    private getReservedTransitByTarget(creep: Creep): Map<string, number> {
+        const reservedTransit = new Map<string, number>();
+
+        for (const hauler of this.colony.getCreeps('hauler')) {
+            if (hauler.name === creep.name || hauler.memory.r !== 'hauler' || !hauler.memory.t) {
+                continue;
+            }
+
+            const inboundCapacity = hauler.store.getFreeCapacity(RESOURCE_ENERGY);
+
+            if (inboundCapacity <= 0) {
+                continue;
+            }
+
+            reservedTransit.set(
+                hauler.memory.t,
+                (reservedTransit.get(hauler.memory.t) ?? 0) + inboundCapacity,
+            );
+        }
+
+        return reservedTransit;
+    }
+
+    private isTransitClaimed(
+        targetId: string,
+        availableEnergy: number,
+        reservedTransit: ReadonlyMap<string, number>,
+    ): boolean {
+        return (reservedTransit.get(targetId) ?? 0) >= availableEnergy;
+    }
+
+    private findClosestByPath<T extends { pos: RoomPosition }>(
+        creep: Creep,
+        targets: readonly T[],
+    ): T | undefined {
+        if (targets.length === 0) {
+            return undefined;
+        }
+
+        return creep.pos.findClosestByPath([...targets]) ?? targets[0];
+    }
+
+    private rememberTarget<T extends EnergySourceTarget | undefined>(creep: Creep, target: T): T {
+        if (creep.memory.r !== 'hauler') {
+            return target;
+        }
+
+        if (target) {
+            creep.memory.t = target.id;
+        } else {
+            delete creep.memory.t;
+        }
+
+        return target;
     }
 }
