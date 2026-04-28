@@ -2,6 +2,7 @@ import {
     BOOST_STOCKPILE,
     BUNKER_DEFENDER_BODY,
     ROLE_MINIMUMS,
+    SYSTEM_GENERATION,
     type ColonyRole,
 } from '../config';
 import type { Colony } from '../colony/Colony';
@@ -108,6 +109,7 @@ export class SpawnManager {
             role === 'emergencyHarvester' ? room?.energyAvailable ?? 300 : room?.energyCapacityAvailable ?? 300;
 
         const memory: CreepMemory = {
+            g: SYSTEM_GENERATION,
             r: role,
             rn: this.colony.name,
             s: 'load',

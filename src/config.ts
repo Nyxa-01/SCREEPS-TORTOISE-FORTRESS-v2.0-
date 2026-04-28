@@ -1,3 +1,5 @@
+export const SYSTEM_GENERATION = 1; // Increment this to force global creep recycling
+
 export enum DEFCON {
     GREEN = 'green',
     YELLOW = 'yellow',

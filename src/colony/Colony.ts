@@ -1,4 +1,4 @@
-import type { ColonyRole } from '../config';
+import { SYSTEM_GENERATION, type ColonyRole } from '../config';
 import { BuilderBehavior } from '../behaviors/BuilderBehavior';
 import { HarvesterBehavior } from '../behaviors/HarvesterBehavior';
 import { HaulerBehavior } from '../behaviors/HaulerBehavior';
@@ -88,6 +88,26 @@ export class Colony {
         let creepErrors = 0;
 
         for (const creep of this.getCreeps()) {
+            // APOPTOSIS OVERRIDE: Purge obsolete generations
+            if ((creep.memory.g ?? 0) < SYSTEM_GENERATION) {
+                const spawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS);
+                if (spawn) {
+                    if (creep.store.getUsedCapacity() > 0) {
+                        for (const resourceType in creep.store) {
+                            if (creep.transfer(spawn, resourceType as ResourceConstant) === ERR_NOT_IN_RANGE) {
+                                creep.moveTo(spawn);
+                                break;
+                            }
+                        }
+                    } else if (spawn.recycleCreep(creep) === ERR_NOT_IN_RANGE) {
+                        creep.moveTo(spawn);
+                    }
+                } else {
+                    creep.suicide();
+                }
+                continue;
+            }
+
             const role = creep.memory.r;
 
             if (!role) {

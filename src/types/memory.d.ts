@@ -37,6 +37,7 @@ declare global {
     }
 
     interface CreepMemory {
+        g?: number;
         r?: ColonyRole;
         rn?: string;
         t?: string;
