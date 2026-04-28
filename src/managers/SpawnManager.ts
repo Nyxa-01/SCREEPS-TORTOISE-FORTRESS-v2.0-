@@ -80,24 +80,28 @@ export class SpawnManager {
             requests.push(this.createRequest('emergencyHarvester', 0, 'bootstrap economy'));
         }
 
+        if (roleCounts.hauler === 0) {
+            requests.push(this.createRequest('hauler', 1, 'bootstrap logistics'));
+        }
+
         const requiredDefenders = this.colony.defenseManager.getRequiredDefenderCount();
         for (let index = roleCounts.defender; index < requiredDefenders; index += 1) {
-            requests.push(this.createRequest('defender', 1, 'bunker defense'));
+            requests.push(this.createRequest('defender', 2, 'bunker defense'));
         }
 
         const minimumHaulers = room.storage ? ROLE_MINIMUMS.hauler : 1;
-        for (let index = roleCounts.hauler; index < minimumHaulers; index += 1) {
-            requests.push(this.createRequest('hauler', 2, 'maintain logistics throughput'));
+        for (let index = Math.max(1, roleCounts.hauler); index < minimumHaulers; index += 1) {
+            requests.push(this.createRequest('hauler', 3, 'maintain logistics throughput'));
         }
 
         const minimumBuilders = room.find(FIND_MY_CONSTRUCTION_SITES).length > 0 ? ROLE_MINIMUMS.builder : 0;
         for (let index = roleCounts.builder; index < minimumBuilders; index += 1) {
-            requests.push(this.createRequest('builder', 3, 'complete construction sites'));
+            requests.push(this.createRequest('builder', 4, 'complete construction sites'));
         }
 
         const minimumUpgraders = this.colony.upgradeManager.shouldUpgrade() ? ROLE_MINIMUMS.upgrader : 0;
         for (let index = roleCounts.upgrader; index < minimumUpgraders; index += 1) {
-            requests.push(this.createRequest('upgrader', 4, 'maintain controller progress'));
+            requests.push(this.createRequest('upgrader', 5, 'maintain controller progress'));
         }
 
         return requests.sort((left, right) => left.priority - right.priority);

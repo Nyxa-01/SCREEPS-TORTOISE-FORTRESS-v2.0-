@@ -2,7 +2,7 @@ import { DEFCON } from '../../src/config';
 import { SpawnManager } from '../../src/managers/SpawnManager';
 
 describe('SpawnManager', () => {
-    it('orders the queue by emergency harvester, defender, hauler, then upgrader', () => {
+    it('orders the queue by emergency harvester, first hauler, defender, then upgrader', () => {
         const colony = {
             name: 'W0N0',
             room: {
@@ -25,8 +25,8 @@ describe('SpawnManager', () => {
 
         expect(manager.getQueue().map((request) => request.role)).toEqual([
             'emergencyHarvester',
-            'defender',
             'hauler',
+            'defender',
             'upgrader',
         ]);
     });

@@ -1,4 +1,4 @@
-import { SYSTEM_GENERATION, type ColonyRole } from '../config';
+import { DEFCON, SYSTEM_GENERATION, type ColonyRole } from '../config';
 import { BuilderBehavior } from '../behaviors/BuilderBehavior';
 import { HarvesterBehavior } from '../behaviors/HarvesterBehavior';
 import { HaulerBehavior } from '../behaviors/HaulerBehavior';
@@ -86,10 +86,11 @@ export class Colony {
 
     private runCreeps(): void {
         let creepErrors = 0;
+        const currentDefcon = this.defenseManager.getSnapshot().defcon;
 
         for (const creep of this.getCreeps()) {
-            // APOPTOSIS OVERRIDE: Purge obsolete generations
-            if ((creep.memory.g ?? 0) < SYSTEM_GENERATION) {
+            // APOPTOSIS OVERRIDE: Purge obsolete generations ONLY IN PEACETIME
+            if ((creep.memory.g ?? 0) < SYSTEM_GENERATION && currentDefcon === DEFCON.GREEN) {
                 const spawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS);
                 if (spawn) {
                     if (creep.store.getUsedCapacity() > 0) {
