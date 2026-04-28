@@ -1,4 +1,5 @@
 import type { Colony } from '../colony/Colony';
+import { SYSTEM_GENERATION } from '../config';
 import { BaseBehavior } from './BaseBehavior';
 import { PathingService } from '../pathing/PathingService';
 import { Selector } from '../tasks/Selector';
@@ -75,7 +76,10 @@ export class HarvesterBehavior extends BaseBehavior {
 
             for (const sourceCandidate of sources) {
                 const assigned = harvesters.filter(
-                    (harvester) => harvester.name !== creep.name && harvester.memory.t === sourceCandidate.id,
+                    (harvester) =>
+                        harvester.name !== creep.name &&
+                        harvester.memory.t === sourceCandidate.id &&
+                        (harvester.memory.g ?? 0) >= SYSTEM_GENERATION,
                 ).length;
 
                 if (assigned < minAssigned) {
