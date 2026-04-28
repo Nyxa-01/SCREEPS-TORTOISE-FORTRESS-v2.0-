@@ -8,6 +8,8 @@ function createCarrier(
     y: number,
     freeCapacity = 100,
     targetId?: string,
+    usedCapacity = 0,
+    state?: 'load' | 'work',
 ): Creep {
     return {
         id: `${name}-id`,
@@ -16,11 +18,12 @@ function createCarrier(
         memory: {
             r: role,
             rn: 'W0N0',
+            s: state,
             t: targetId,
         },
         store: {
             getFreeCapacity: () => freeCapacity,
-            getUsedCapacity: () => 0,
+            getUsedCapacity: () => usedCapacity,
         },
     } as unknown as Creep;
 }
@@ -162,6 +165,7 @@ describe('LogisticsManager', () => {
         const manager = new LogisticsManager(colony);
 
         expect(manager.getFillTarget(creep)?.id).toBe(spawn.id);
+        expect(creep.memory.t).toBe(spawn.id);
     });
 
     it('elevates towers into the core group once DEFCON rises above green', () => {
@@ -188,6 +192,33 @@ describe('LogisticsManager', () => {
         expect(manager.getFillTarget(creep)?.id).toBe(tower.id);
     });
 
+    it('filters fully reserved extensions out of the priority-zero sink group', () => {
+        const spawn = createStoreTarget('spawn-core', STRUCTURE_SPAWN, 12, 12, 0, 300) as StructureSpawn;
+        const extension = createStoreTarget('extension-edge', STRUCTURE_EXTENSION, 6, 6, 0, 50) as StructureExtension;
+        const inboundHauler = createCarrier('Erebus-Other', 'hauler', 7, 7, 0, extension.id, 50, 'work');
+        const creep = createCarrier('Erebus-Prime', 'hauler', 5, 5, 100);
+        const colony = createColony({
+            defcon: DEFCON.GREEN,
+            haulers: [creep, inboundHauler],
+            roomFind: (type, searchOptions) => {
+                if (type === FIND_MY_STRUCTURES) {
+                    return filterByOptions([extension, spawn], searchOptions);
+                }
+
+                if (type === FIND_STRUCTURES) {
+                    return [];
+                }
+
+                return [];
+            },
+        });
+
+        const manager = new LogisticsManager(colony);
+
+        expect(manager.getFillTarget(creep)?.id).toBe(spawn.id);
+        expect(creep.memory.t).toBe(spawn.id);
+    });
+
     it('places containers ahead of storage once core sinks are saturated', () => {
         const container = createStoreTarget('buffer-container', STRUCTURE_CONTAINER, 8, 8, 0, 200) as StructureContainer;
         const storage = createStoreTarget('deep-storage', STRUCTURE_STORAGE, 6, 6, 0, 500) as StructureStorage;
@@ -211,5 +242,33 @@ describe('LogisticsManager', () => {
         const manager = new LogisticsManager(colony);
 
         expect(manager.getFillTarget(creep)?.id).toBe(container.id);
+    });
+
+    it('filters fully reserved containers before falling back to storage', () => {
+        const container = createStoreTarget('buffer-container', STRUCTURE_CONTAINER, 8, 8, 0, 200) as StructureContainer;
+        const storage = createStoreTarget('deep-storage', STRUCTURE_STORAGE, 6, 6, 0, 500) as StructureStorage;
+        const inboundHauler = createCarrier('Erebus-Other', 'hauler', 7, 7, 0, container.id, 200, 'work');
+        const creep = createCarrier('Erebus-Prime', 'hauler', 5, 5, 100);
+        const colony = createColony({
+            haulers: [creep, inboundHauler],
+            storage,
+            defcon: DEFCON.GREEN,
+            roomFind: (type, searchOptions) => {
+                if (type === FIND_MY_STRUCTURES) {
+                    return [];
+                }
+
+                if (type === FIND_STRUCTURES) {
+                    return filterByOptions([container], searchOptions);
+                }
+
+                return [];
+            },
+        });
+
+        const manager = new LogisticsManager(colony);
+
+        expect(manager.getFillTarget(creep)?.id).toBe(storage.id);
+        expect(creep.memory.t).toBe(storage.id);
     });
 });

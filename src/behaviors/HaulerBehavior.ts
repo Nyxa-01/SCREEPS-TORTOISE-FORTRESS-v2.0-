@@ -10,10 +10,6 @@ export class HaulerBehavior extends BaseBehavior {
     public run(creep: Creep, colony: Colony): boolean {
         this.syncState(creep);
 
-        if (creep.memory.s === 'work') {
-            delete creep.memory.t;
-        }
-
         const behavior = new Selector([
             new Sequence([
                 new FnTask(({ creep: activeCreep }) => activeCreep.memory.s === 'work'),
@@ -28,11 +24,6 @@ export class HaulerBehavior extends BaseBehavior {
 
         const handled = behavior.run({ creep, colony });
         this.syncState(creep);
-
-        if (creep.memory.s === 'work') {
-            delete creep.memory.t;
-        }
-
         return handled;
     }
 
@@ -61,23 +52,6 @@ export class HaulerBehavior extends BaseBehavior {
     }
 
     private collectEnergy(creep: Creep, colony: Colony): boolean {
-        const provider = creep.pos.findClosestByPath(FIND_MY_CREEPS, {
-            filter: (candidate) =>
-                candidate.memory.r === 'emergencyHarvester' &&
-                candidate.store.getUsedCapacity(RESOURCE_ENERGY) > 20,
-        });
-
-        if (provider) {
-            delete creep.memory.t;
-
-            if (!creep.pos.isNearTo(provider)) {
-                PathingService.moveTo(creep, provider.pos, 1);
-                return true;
-            }
-
-            return true;
-        }
-
         const source = colony.logisticsManager.getEnergySource(creep);
 
         if (!source) {
