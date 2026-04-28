@@ -50,15 +50,19 @@ export class HarvesterBehavior {
     }
 
     private harvestEnergy(creep: Creep, room: Room): boolean {
-        // 1. Try to use assigned source from memory
-        let source = Game.getObjectById(creep.memory.t as Id<Source>);
+        const sources = room.find(FIND_SOURCES);
+        if (sources.length === 0) return false;
 
-        // 2. If no assignment or assigned source is empty, find ANY active source
+        if (!creep.memory.t) {
+            const nameParts = creep.name.split('-');
+            const uid = parseInt(nameParts[nameParts.length - 1] ?? '0', 10) || 0;
+            creep.memory.t = sources[uid % sources.length]!.id;
+        }
+
+        let source: Source | null = Game.getObjectById(creep.memory.t as Id<Source>);
+
         if (!source || (source.energy === 0 && source.ticksToRegeneration > 0)) {
-            source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE) || creep.pos.findClosestByRange(room.find(FIND_SOURCES));
-            if (source) {
-                creep.memory.t = source.id; // Update assignment to the new active target
-            }
+            source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE);
         }
 
         if (!source) return false;
