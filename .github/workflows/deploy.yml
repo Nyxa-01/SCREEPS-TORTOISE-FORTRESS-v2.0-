@@ -30,19 +30,29 @@ jobs:
         run: npm run test --if-present
 
       - name: Inject Secure Credentials
+        env:
+          SCREEPS_TOKEN: ${{ secrets.SCREEPS_TOKEN }}
         run: |
-          cat << EOF > screeps.json
-          {
-            "main": {
-              "token": "${{ secrets.SCREEPS_TOKEN }}",
-              "host": "screeps.com",
-              "protocol": "https",
-              "port": 443,
-              "path": "/",
-              "branch": "main"
-            }
+          node -e "
+          const fs = require('fs');
+          const token = process.env.SCREEPS_TOKEN;
+          if (!token) {
+            console.error('CRITICAL: SCREEPS_TOKEN is empty or not found in GitHub Secrets!');
+            process.exit(1);
           }
-          EOF
+          const config = {
+            main: {
+              token: token.trim(),
+              host: 'screeps.com',
+              protocol: 'https',
+              port: 443,
+              path: '/',
+              branch: 'main'
+            }
+          };
+          fs.writeFileSync('screeps.json', JSON.stringify(config, null, 2));
+          console.log('screeps.json generated securely.');
+          "
 
       - name: Build and Push to MMO Server
         run: SCREEPS_TARGET=main DEPLOY=true npx rollup -c
