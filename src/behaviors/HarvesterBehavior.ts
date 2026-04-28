@@ -33,7 +33,7 @@ export class HarvesterBehavior {
         }
     }
 
-    private deliverEnergy(creep: Creep, colony: Colony): boolean {
+    private deliverEnergy(creep: Creep, _colony: Colony): boolean {
         const nearbyHauler = creep.pos.findInRange(FIND_MY_CREEPS, 1, {
             filter: (candidate) =>
                 candidate.memory.r === 'hauler' &&
@@ -45,19 +45,11 @@ export class HarvesterBehavior {
             return true;
         }
 
-        const target = colony.logisticsManager.getFillTarget(creep) ?? colony.room?.storage;
-
-        if (!target) {
-            return false;
+        if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+            creep.drop(RESOURCE_ENERGY);
         }
 
-        if (!creep.pos.isNearTo(target)) {
-            PathingService.moveTo(creep, target, 1);
-            return true;
-        }
-
-        const result = creep.transfer(target, RESOURCE_ENERGY);
-        return result === OK || result === ERR_FULL;
+        return true;
     }
 
     private harvestEnergy(creep: Creep, room: Room): boolean {

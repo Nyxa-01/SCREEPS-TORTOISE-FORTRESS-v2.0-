@@ -114,6 +114,20 @@ export class PathingService {
             }
         }
 
+        const hostiles = room.find(FIND_HOSTILE_CREEPS);
+        for (const hostile of hostiles) {
+            const minX = Math.max(0, hostile.pos.x - 3);
+            const maxX = Math.min(49, hostile.pos.x + 3);
+            const minY = Math.max(0, hostile.pos.y - 3);
+            const maxY = Math.min(49, hostile.pos.y + 3);
+
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    matrix.set(x, y, 255);
+                }
+            }
+        }
+
         return matrix;
     }
 }
