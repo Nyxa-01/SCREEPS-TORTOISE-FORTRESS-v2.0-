@@ -4,8 +4,9 @@ import { Selector } from '../tasks/Selector';
 import { Sequence } from '../tasks/Sequence';
 import { FnTask } from '../tasks/Task';
 import type { EnergySourceTarget } from '../managers/LogisticsManager';
+import { BaseBehavior } from './BaseBehavior';
 
-export class HaulerBehavior {
+export class HaulerBehavior extends BaseBehavior {
     public run(creep: Creep, colony: Colony): boolean {
         this.syncState(creep);
 
@@ -24,14 +25,6 @@ export class HaulerBehavior {
         const handled = behavior.run({ creep, colony });
         this.syncState(creep);
         return handled;
-    }
-
-    private syncState(creep: Creep): void {
-        if (creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
-            creep.memory.s = 'load';
-        } else if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
-            creep.memory.s = 'work';
-        }
     }
 
     private deliverEnergy(creep: Creep, colony: Colony): boolean {

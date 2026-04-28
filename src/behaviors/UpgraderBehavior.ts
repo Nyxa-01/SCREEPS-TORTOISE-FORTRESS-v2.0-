@@ -3,8 +3,9 @@ import { PathingService } from '../pathing/PathingService';
 import { Selector } from '../tasks/Selector';
 import { Sequence } from '../tasks/Sequence';
 import { FnTask } from '../tasks/Task';
+import { BaseBehavior } from './BaseBehavior';
 
-export class UpgraderBehavior {
+export class UpgraderBehavior extends BaseBehavior {
     public run(creep: Creep, colony: Colony): boolean {
         this.syncState(creep);
 
@@ -23,14 +24,6 @@ export class UpgraderBehavior {
         const handled = behavior.run({ creep, colony });
         this.syncState(creep);
         return handled;
-    }
-
-    private syncState(creep: Creep): void {
-        if (creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
-            creep.memory.s = 'load';
-        } else if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
-            creep.memory.s = 'work';
-        }
     }
 
     private collectEnergy(creep: Creep, colony: Colony): boolean {
