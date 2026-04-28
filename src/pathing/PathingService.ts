@@ -43,7 +43,15 @@ export class PathingService {
         }
 
         creep.memory.w = search.path.slice(0, 12).map((position) => `${position.roomName}:${position.x}:${position.y}`);
-        return creep.move(creep.pos.getDirectionTo(nextStep));
+        const direction = creep.pos.getDirectionTo(nextStep);
+
+        // Traffic Evasion: If an allied creep is on the next step, command it to swap places
+        const blockingCreep = nextStep.lookFor(LOOK_CREEPS)[0];
+        if (blockingCreep && blockingCreep.my) {
+            blockingCreep.move(nextStep.getDirectionTo(creep.pos));
+        }
+
+        return creep.move(direction);
     }
 
     public static getCostMatrix(roomName: string): CostMatrix | boolean {
