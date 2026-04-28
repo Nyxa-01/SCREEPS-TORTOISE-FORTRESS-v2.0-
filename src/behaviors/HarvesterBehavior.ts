@@ -33,7 +33,9 @@ export class HarvesterBehavior {
         }
     }
 
-    private deliverEnergy(creep: Creep, _colony: Colony): boolean {
+    private deliverEnergy(creep: Creep, colony: Colony): boolean {
+        void colony;
+
         const nearbyHauler = creep.pos.findInRange(FIND_MY_CREEPS, 1, {
             filter: (candidate) =>
                 candidate.memory.r === 'hauler' &&
