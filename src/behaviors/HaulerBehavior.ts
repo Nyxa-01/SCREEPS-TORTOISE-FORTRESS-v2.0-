@@ -55,7 +55,6 @@ export class HaulerBehavior extends BaseBehavior {
         const source = colony.logisticsManager.getEnergySource(creep);
 
         if (!source) {
-            delete creep.memory.t;
             return false;
         }
 

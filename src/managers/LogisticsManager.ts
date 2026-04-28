@@ -81,7 +81,8 @@ export class LogisticsManager {
             return creep.pos.getRangeTo(left) - creep.pos.getRangeTo(right);
         });
 
-        return this.rememberTarget(creep, fillTargets[0]);
+        const target = fillTargets[0];
+        return target ? this.rememberTarget(creep, target) : undefined;
     }
 
     public getEnergySource(creep: Creep): EnergySourceTarget | undefined {
@@ -194,7 +195,7 @@ export class LogisticsManager {
             }
         }
 
-        return this.rememberTarget(creep, undefined); // STRICT ROLE SEPARATION: Civilians must never mine raw sources.
+        return undefined; // STRICT ROLE SEPARATION: Civilians must never mine raw sources.
     }
 
     private getFillPriority(target: EnergySinkTarget, defcon: DEFCON): number {
@@ -247,7 +248,12 @@ export class LogisticsManager {
         const reservedTransit = new Map<string, number>();
 
         for (const hauler of this.colony.getCreeps('hauler')) {
-            if (hauler.name === creep.name || hauler.memory.r !== 'hauler' || !hauler.memory.t) {
+            if (
+                hauler.name === creep.name ||
+                hauler.memory.r !== 'hauler' ||
+                hauler.memory.s !== 'load' ||
+                !hauler.memory.t
+            ) {
                 continue;
             }
 
@@ -299,8 +305,6 @@ export class LogisticsManager {
 
         if (target) {
             creep.memory.t = target.id;
-        } else {
-            delete creep.memory.t;
         }
 
         return target;

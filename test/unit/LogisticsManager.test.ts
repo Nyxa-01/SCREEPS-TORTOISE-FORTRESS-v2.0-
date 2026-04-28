@@ -96,7 +96,7 @@ describe('LogisticsManager', () => {
     it('excludes fully claimed dropped energy from other authorized haulers', () => {
         const claimed = createDropped('drop-claimed', 6, 6, 80);
         const unclaimed = createDropped('drop-open', 7, 7, 120);
-        const otherHauler = createCarrier('Erebus-Other', 'hauler', 3, 3, 100, claimed.id);
+        const otherHauler = createCarrier('Erebus-Other', 'hauler', 3, 3, 100, claimed.id, 0, 'load');
         const creep = createCarrier('Erebus-Prime', 'hauler', 5, 5, 100);
         const colony = createColony({
             haulers: [creep, otherHauler],
@@ -119,7 +119,7 @@ describe('LogisticsManager', () => {
     it('excludes fully claimed ruins from other authorized haulers', () => {
         const claimedRuin = createStoreTarget('ruin-claimed', STRUCTURE_CONTAINER, 6, 6, 75) as Ruin;
         const openRuin = createStoreTarget('ruin-open', STRUCTURE_CONTAINER, 7, 7, 200) as Ruin;
-        const otherHauler = createCarrier('Erebus-Other', 'hauler', 3, 3, 80, claimedRuin.id);
+        const otherHauler = createCarrier('Erebus-Other', 'hauler', 3, 3, 80, claimedRuin.id, 0, 'load');
         const creep = createCarrier('Erebus-Prime', 'hauler', 5, 5, 100);
         const colony = createColony({
             haulers: [creep, otherHauler],
@@ -141,6 +141,28 @@ describe('LogisticsManager', () => {
 
         expect(target?.id).toBe(openRuin.id);
         expect(creep.memory.t).toBe(openRuin.id);
+    });
+
+    it('ignores work-state haulers when reserving gathering sources', () => {
+        const claimed = createDropped('drop-claimed', 6, 6, 80);
+        const otherHauler = createCarrier('Erebus-Other', 'hauler', 3, 3, 100, claimed.id, 0, 'work');
+        const creep = createCarrier('Erebus-Prime', 'hauler', 5, 5, 100);
+        const colony = createColony({
+            haulers: [creep, otherHauler],
+            roomFind: (type, searchOptions) => {
+                if (type === FIND_DROPPED_RESOURCES) {
+                    return filterByOptions([claimed], searchOptions);
+                }
+
+                return [];
+            },
+        });
+
+        const manager = new LogisticsManager(colony);
+        const target = manager.getEnergySource(creep);
+
+        expect(target?.id).toBe(claimed.id);
+        expect(creep.memory.t).toBe(claimed.id);
     });
 
     it('keeps spawns and extensions ahead of towers while DEFCON is green', () => {
