@@ -11,15 +11,15 @@ export class UpgradeManager {
     public shouldUpgrade(): boolean {
         const room = this.colony.room;
         const controller = room?.controller;
-
         if (!room || !controller?.my) {
             return false;
         }
 
         const reserve = room.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? room.energyAvailable;
         const currentDefcon = this.colony.defenseManager.getSnapshot().defcon;
+        const isSafe = (controller.safeMode ?? 0) > 0;
 
-        return currentDefcon === DEFCON.GREEN || reserve > room.energyCapacityAvailable;
+        return currentDefcon === DEFCON.GREEN || isSafe || reserve > room.energyCapacityAvailable;
     }
 
     public getTarget(): StructureController | undefined {

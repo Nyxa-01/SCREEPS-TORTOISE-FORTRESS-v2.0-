@@ -33,7 +33,8 @@ export class LogisticsManager {
             return undefined;
         }
 
-        const defenseActive = this.colony.defenseManager.getSnapshot().hostileCount > 0;
+        const safeModeActive = (room.controller?.safeMode ?? 0) > 0;
+        const defenseActive = !safeModeActive && this.colony.defenseManager.getSnapshot().hostileCount > 0;
         const energyStructures = room.find(FIND_MY_STRUCTURES, {
             filter: (structure) => {
                 if (
