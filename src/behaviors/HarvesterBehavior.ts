@@ -34,6 +34,17 @@ export class HarvesterBehavior {
     }
 
     private deliverEnergy(creep: Creep, colony: Colony): boolean {
+        const nearbyHauler = creep.pos.findInRange(FIND_MY_CREEPS, 1, {
+            filter: (candidate) =>
+                candidate.memory.r === 'hauler' &&
+                candidate.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+        })[0];
+
+        if (nearbyHauler) {
+            creep.transfer(nearbyHauler, RESOURCE_ENERGY);
+            return true;
+        }
+
         const target = colony.logisticsManager.getFillTarget(creep) ?? colony.room?.storage;
 
         if (!target) {

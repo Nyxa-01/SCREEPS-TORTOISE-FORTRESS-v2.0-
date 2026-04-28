@@ -59,6 +59,21 @@ export class HaulerBehavior {
     }
 
     private collectEnergy(creep: Creep, colony: Colony): boolean {
+        const provider = creep.pos.findClosestByPath(FIND_MY_CREEPS, {
+            filter: (candidate) =>
+                candidate.memory.r === 'emergencyHarvester' &&
+                candidate.store.getUsedCapacity(RESOURCE_ENERGY) > 20,
+        });
+
+        if (provider) {
+            if (!creep.pos.isNearTo(provider)) {
+                PathingService.moveTo(creep, provider.pos, 1);
+                return true;
+            }
+
+            return true;
+        }
+
         const source = colony.logisticsManager.getEnergySource(creep);
 
         if (!source) {
