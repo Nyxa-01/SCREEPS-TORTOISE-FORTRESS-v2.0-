@@ -93,8 +93,8 @@ export class Colony {
                 const spawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS);
                 if (spawn) {
                     if (creep.store.getUsedCapacity() > 0) {
-                        for (const resourceType in creep.store) {
-                            if (creep.transfer(spawn, resourceType as ResourceConstant) === ERR_NOT_IN_RANGE) {
+                        for (const resourceType of Object.keys(creep.store) as ResourceConstant[]) {
+                            if (creep.transfer(spawn, resourceType) === ERR_NOT_IN_RANGE) {
                                 creep.moveTo(spawn);
                                 break;
                             }
