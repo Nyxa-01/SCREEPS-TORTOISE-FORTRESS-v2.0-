@@ -148,7 +148,7 @@ export class LogisticsManager {
         }
 
         // Saturation Bypass: Prevent RCL 1 deadlock by allowing workers to tap full spawns
-        if (creep.name.includes('upgrader') || creep.name.includes('builder')) {
+        if (creep.memory.r === 'upgrader' || creep.memory.r === 'builder') {
             const saturatedSpawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS, {
                 filter: (s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= 250,
             });

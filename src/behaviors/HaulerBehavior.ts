@@ -33,7 +33,7 @@ export class HaulerBehavior extends BaseBehavior {
         if (!target) {
             target = creep.pos.findClosestByPath(FIND_MY_CREEPS, {
                 filter: (candidate) =>
-                    (candidate.name.includes('upgrader') || candidate.name.includes('builder')) &&
+                    (candidate.memory.r === 'upgrader' || candidate.memory.r === 'builder') &&
                     candidate.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
             }) ?? undefined;
         }
