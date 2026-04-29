@@ -27,16 +27,18 @@ export class DefenderBehavior {
             return true;
         }
 
-        if (creep.pos.getRangeTo(target) > 3) {
-            PathingService.moveTo(creep, target, 3);
+        if (creep.pos.getRangeTo(target) > 1) {
+            PathingService.moveTo(creep, target, 1);
             return true;
         }
 
-        if (creep.pos.getRangeTo(target) <= 1 && creep.rangedMassAttack() === OK) {
-            return true;
+        const meleeResult = creep.attack(target);
+
+        if (creep.rangedMassAttack() === OK) {
+            return meleeResult === OK;
         }
 
-        return creep.rangedAttack(target) === OK;
+        return meleeResult === OK || creep.rangedAttack(target) === OK;
     }
 
     private handleBoosting(creep: Creep): boolean {

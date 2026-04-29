@@ -1,4 +1,4 @@
-export const SYSTEM_GENERATION = 25; // Increment this to force global creep recycling
+export const SYSTEM_GENERATION = 26; // Increment this to force global creep recycling
 
 export enum DEFCON {
     GREEN = 'green',
@@ -30,6 +30,8 @@ export const BUNKER_DEFENDER_BODY: BodyPartConstant[] = [
     ...Array<BodyPartConstant>(28).fill(RANGED_ATTACK),
     ...Array<BodyPartConstant>(10).fill(MOVE),
 ];
+
+export const DEFENDER_PATTERN: BodyPartConstant[] = [RANGED_ATTACK, MOVE, ATTACK, MOVE];
 
 export const SAFE_MODE_POLICY = {
     hoardCharges: 3,

@@ -1,6 +1,7 @@
 import {
     BOOST_STOCKPILE,
     BUNKER_DEFENDER_BODY,
+    DEFENDER_PATTERN,
     ROLE_MINIMUMS,
     SYSTEM_GENERATION,
     type ColonyRole,
@@ -14,7 +15,6 @@ const EMERGENCY_HARVESTER_PATTERN: BodyPartConstant[] = [WORK, CARRY, MOVE];
 const HAULER_PATTERN: BodyPartConstant[] = [CARRY, CARRY, MOVE];
 const BUILDER_PATTERN: BodyPartConstant[] = [WORK, CARRY, CARRY, MOVE, MOVE];
 const UPGRADER_PATTERN: BodyPartConstant[] = [WORK, CARRY, MOVE, MOVE];
-const DEFENDER_PATTERN: BodyPartConstant[] = [TOUGH, RANGED_ATTACK, MOVE, MOVE];
 const MYTHIC_TITLES: Record<string, string> = {
     emergencyHarvester: 'Nyx_Helot',
     hauler: 'Erebus_Peltast',

@@ -30,4 +30,30 @@ describe('SpawnManager', () => {
             'upgrader',
         ]);
     });
+
+    it('uses the hybrid elastic defender body when the room cannot afford bunker armor', () => {
+        const colony = {
+            name: 'W0N0',
+            room: {
+                energyAvailable: 330,
+                energyCapacityAvailable: 330,
+                find: jest.fn(() => []),
+            },
+            getCreeps: jest.fn(() => []),
+            defenseManager: {
+                getRequiredDefenderCount: () => 1,
+                getSnapshot: () => ({ defcon: DEFCON.ORANGE, hostileCount: 1 }),
+            },
+            upgradeManager: {
+                shouldUpgrade: () => false,
+            },
+        } as any;
+
+        const manager = new SpawnManager(colony);
+        manager.init();
+
+        const defenderRequest = manager.getQueue().find((request) => request.role === 'defender');
+
+        expect(defenderRequest?.body).toEqual([RANGED_ATTACK, MOVE, ATTACK, MOVE]);
+    });
 });
