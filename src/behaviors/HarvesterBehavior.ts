@@ -2,32 +2,34 @@ import type { Colony } from '../colony/Colony';
 import { SYSTEM_GENERATION } from '../config';
 import { BaseBehavior } from './BaseBehavior';
 import { PathingService } from '../pathing/PathingService';
-import { Selector } from '../tasks/Selector';
-import { Sequence } from '../tasks/Sequence';
-import { FnTask } from '../tasks/Task';
 
 export class HarvesterBehavior extends BaseBehavior {
     public run(creep: Creep, colony: Colony): boolean {
+        const haulerCount = colony.getCreeps('hauler').length;
+
+        // MODE 1: Static Miner (Optimal)
+        // If haulers exist, continuously harvest and simultaneously offload.
+        if (haulerCount > 0) {
+            // 1. Offload energy as a parallel intent if carrying anything
+            if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+                this.offloadEnergy(creep);
+            }
+            // 2. Unconditionally harvest every single tick
+            return this.harvestEnergy(creep, colony);
+        }
+
+        // MODE 2: Emergency Hauler
+        // If no haulers exist, use the state machine to run energy back to base
         this.syncState(creep);
 
-        const behavior = new Selector([
-            new Sequence([
-                new FnTask(({ creep: activeCreep }) => activeCreep.memory.s === 'work'),
-                new FnTask(({ creep: activeCreep, colony: activeColony }) =>
-                    this.deliverEnergy(activeCreep, activeColony),
-                ),
-            ]),
-            new FnTask(({ creep: activeCreep, colony: activeColony }) =>
-                this.harvestEnergy(activeCreep, activeColony),
-            ),
-        ]);
-
-        const handled = behavior.run({ creep, colony });
-        this.syncState(creep);
-        return handled;
+        if (creep.memory.s === 'work') {
+            return this.deliverEnergy(creep, colony);
+        } else {
+            return this.harvestEnergy(creep, colony);
+        }
     }
 
-    private deliverEnergy(creep: Creep, colony: Colony): boolean {
+    private offloadEnergy(creep: Creep): void {
         const nearbyHauler = creep.pos.findInRange(FIND_MY_CREEPS, 1, {
             filter: (candidate) =>
                 candidate.memory.r === 'hauler' &&
@@ -36,21 +38,21 @@ export class HarvesterBehavior extends BaseBehavior {
 
         if (nearbyHauler) {
             creep.transfer(nearbyHauler, RESOURCE_ENERGY);
-            return true;
+        } else if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+            creep.drop(RESOURCE_ENERGY);
         }
+    }
 
-        const haulerCount = colony.getCreeps('hauler').length;
-        if (haulerCount === 0) {
-            const target = colony.logisticsManager.getFillTarget(creep);
-            if (target) {
-                if (!creep.pos.isNearTo(target)) {
-                    PathingService.moveTo(creep, target, 1);
-                    return true;
-                }
-
-                creep.transfer(target, RESOURCE_ENERGY);
+    private deliverEnergy(creep: Creep, colony: Colony): boolean {
+        const target = colony.logisticsManager.getFillTarget(creep);
+        if (target) {
+            if (!creep.pos.isNearTo(target)) {
+                PathingService.moveTo(creep, target, 1);
                 return true;
             }
+
+            creep.transfer(target, RESOURCE_ENERGY);
+            return true;
         }
 
         if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {

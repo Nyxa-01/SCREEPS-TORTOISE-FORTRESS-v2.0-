@@ -1,8 +1,5 @@
 import type { Colony } from '../colony/Colony';
 import { PathingService } from '../pathing/PathingService';
-import { Selector } from '../tasks/Selector';
-import { Sequence } from '../tasks/Sequence';
-import { FnTask } from '../tasks/Task';
 import type { EnergySourceTarget } from '../managers/LogisticsManager';
 import { BaseBehavior } from './BaseBehavior';
 
@@ -10,21 +7,29 @@ export class HaulerBehavior extends BaseBehavior {
     public run(creep: Creep, colony: Colony): boolean {
         this.syncState(creep);
 
-        const behavior = new Selector([
-            new Sequence([
-                new FnTask(({ creep: activeCreep }) => activeCreep.memory.s === 'work'),
-                new FnTask(({ creep: activeCreep, colony: activeColony }) =>
-                    this.deliverEnergy(activeCreep, activeColony),
-                ),
-            ]),
-            new FnTask(({ creep: activeCreep, colony: activeColony }) =>
-                this.collectEnergy(activeCreep, activeColony),
-            ),
-        ]);
+        // FIX 1: Prevent "Partial Load" Paralysis
+        // If we have some energy but no sources are left, force switch to 'work'
+        if (creep.memory.s === 'load' && creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+            const availableSource = colony.logisticsManager.getEnergySource(creep);
+            if (!availableSource) {
+                creep.memory.s = 'work';
+                delete creep.memory.t;
+            }
+        }
 
-        const handled = behavior.run({ creep, colony });
-        this.syncState(creep);
-        return handled;
+        // Standard execution flow bypassing the error-prone Selector
+        if (creep.memory.s === 'work') {
+            const delivered = this.deliverEnergy(creep, colony);
+
+            // FIX 2: Prevent Full Fallback to Source
+            // If we are full but base is full, don't try to collect. Park instead.
+            if (!delivered) {
+                this.park(creep, colony);
+            }
+            return true;
+        } else {
+            return this.collectEnergy(creep, colony);
+        }
     }
 
     private deliverEnergy(creep: Creep, colony: Colony): boolean {
@@ -52,6 +57,9 @@ export class HaulerBehavior extends BaseBehavior {
     }
 
     private collectEnergy(creep: Creep, colony: Colony): boolean {
+        // Redundancy check: A full hauler should never collect
+        if (creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) return false;
+
         const source = colony.logisticsManager.getEnergySource(creep);
 
         if (!source) {
@@ -76,5 +84,13 @@ export class HaulerBehavior extends BaseBehavior {
         }
 
         return creep.harvest(target) === OK;
+    }
+
+    // Idle behavior so full haulers don't clog up logistics paths
+    private park(creep: Creep, colony: Colony): void {
+        const spawn = colony.room?.find(FIND_MY_SPAWNS)[0];
+        if (spawn && creep.pos.getRangeTo(spawn) > 3) {
+            PathingService.moveTo(creep, spawn, 3);
+        }
     }
 }
