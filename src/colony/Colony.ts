@@ -106,20 +106,23 @@ export class Colony {
 
             if (shouldPurge) {
                 const spawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS);
+
                 if (spawn) {
-                    if (creep.store.getUsedCapacity() > 0) {
+                    if (!creep.pos.isNearTo(spawn)) {
+                        creep.moveTo(spawn);
+                    } else if (creep.store.getUsedCapacity() > 0) {
                         for (const resourceType of Object.keys(creep.store) as ResourceConstant[]) {
-                            if (creep.transfer(spawn, resourceType) === ERR_NOT_IN_RANGE) {
-                                creep.moveTo(spawn);
-                                break;
+                            if (creep.transfer(spawn, resourceType) === ERR_FULL) {
+                                creep.drop(resourceType);
                             }
                         }
-                    } else if (spawn.recycleCreep(creep) === ERR_NOT_IN_RANGE) {
-                        creep.moveTo(spawn);
+                    } else {
+                        spawn.recycleCreep(creep);
                     }
                 } else {
                     creep.suicide();
                 }
+
                 continue;
             }
 
