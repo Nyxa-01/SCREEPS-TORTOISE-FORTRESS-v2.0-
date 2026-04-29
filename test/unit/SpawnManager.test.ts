@@ -56,4 +56,58 @@ describe('SpawnManager', () => {
 
         expect(defenderRequest?.body).toEqual([RANGED_ATTACK, MOVE, ATTACK, MOVE]);
     });
+
+    it('queues a builder when construction sites exist and no builders are present', () => {
+        const mockSite = { id: 'site-1', structureType: STRUCTURE_EXTENSION };
+        const colony = {
+            name: 'W0N0',
+            room: {
+                energyAvailable: 550,
+                energyCapacityAvailable: 550,
+                find: jest.fn((type: number) =>
+                    type === FIND_MY_CONSTRUCTION_SITES ? [mockSite] : [],
+                ),
+            },
+            getCreeps: jest.fn(() => []),
+            defenseManager: {
+                getRequiredDefenderCount: () => 0,
+                getSnapshot: () => ({ defcon: DEFCON.GREEN, hostileCount: 0 }),
+            },
+            upgradeManager: {
+                shouldUpgrade: () => false,
+            },
+        } as any;
+
+        const manager = new SpawnManager(colony);
+        manager.init();
+
+        const roles = manager.getQueue().map((request) => request.role);
+        expect(roles).toContain('builder');
+    });
+
+    it('does not queue a builder when no construction sites are present', () => {
+        const colony = {
+            name: 'W0N0',
+            room: {
+                energyAvailable: 550,
+                energyCapacityAvailable: 550,
+                find: jest.fn(() => []),
+            },
+            getCreeps: jest.fn(() => []),
+            defenseManager: {
+                getRequiredDefenderCount: () => 0,
+                getSnapshot: () => ({ defcon: DEFCON.GREEN, hostileCount: 0 }),
+            },
+            upgradeManager: {
+                shouldUpgrade: () => false,
+            },
+        } as any;
+
+        const manager = new SpawnManager(colony);
+        manager.init();
+
+        const roles = manager.getQueue().map((request) => request.role);
+        expect(roles).not.toContain('builder');
+    });
 });
+
